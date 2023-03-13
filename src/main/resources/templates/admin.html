@@ -4,13 +4,23 @@
     <title>Spring Security Example</title>
 </head>
 <body>
-<h1>User, welcome spring boot security page!</h1>
+<h1>Admin, welcome spring boot security page!</h1>
 
 <div>
     <th:block th:each="car : ${cars}">
-        <div th:href="@{/cars/{id}(id=${car.getId()})}" th:text="${car.getModel()}">car</div><br>
+        <a th:href="@{/cars/{id}(id=${car.getId()})}" th:text="${car.getModel()}">car</a><br>
     </th:block>
 </div>
+
+<br/>
+<hr/>
+
+<a href="/cars/new">Create new car</a>
+
+<br/>
+<hr/>
+
+<a href="/registration">Create new Person</a>
 
 <br/>
 <hr/>
@@ -19,7 +29,5 @@
     <input type="submit" value="Exit"/>
 
 </form>
-
-
 </body>
 </html>
