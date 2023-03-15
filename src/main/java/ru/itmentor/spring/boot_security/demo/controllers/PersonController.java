@@ -16,6 +16,7 @@ import ru.itmentor.spring.boot_security.demo.service.CarService;
 import ru.itmentor.spring.boot_security.demo.service.PersonService;
 import ru.itmentor.spring.boot_security.demo.service.RegistrationService;
 import javax.validation.Valid;
+import java.security.Principal;
 import java.util.Collection;
 import java.util.Objects;
 import java.util.Optional;
@@ -32,32 +33,38 @@ public class PersonController {
         this.carService = carService;
         this.registrationService = registrationService;
     }
+    @GetMapping(value = "login")
+    public String loginPage() {
+        return "users/login";
+    }
 
-    @RequestMapping("/user")
-    public String getUserPage(Model model){
+    @RequestMapping("/userPage")
+    public String getUserPage(Model model,Authentication authentication){
         model.addAttribute("cars", carService.getAll());
-        return "user";
+        model.addAttribute("authentication",authentication);
+        return "users/userPage";
     }
-    @RequestMapping("/admin")
-    public String getAdminPage(Model model){
+    @RequestMapping("/adminPage")
+    public String getAdminPage(Model model, Authentication authentication ){
         model.addAttribute("cars", carService.getAll());
-        return "admin";
+        model.addAttribute("authentication",authentication);
+        return "admin/adminPage";
     }
 
-    @GetMapping("/registration")
-    public String registrationPage(Model model) {
-        model.addAttribute("person", new Person());
-        return "registration";
-    }
-
-    @PostMapping("/registration")
-    public String performRegistration(@ModelAttribute("person") @Valid Person person,
-                                      BindingResult bindingResult,Authentication auth) {
-        if(bindingResult.hasErrors())
-            return "registration";
-        registrationService.register(person);
-        return userAdminRedirect(auth);
-    }
+//    @GetMapping("/registration")
+//    public String registrationPage(Model model) {
+//        model.addAttribute("person", new Person());
+//        return "registration";
+//    }
+//
+//    @PostMapping("/registration")
+//    public String performRegistration(@ModelAttribute("person") @Valid Person person,
+//                                      BindingResult bindingResult,Authentication auth) {
+//        if(bindingResult.hasErrors())
+//            return "registration";
+//        registrationService.register(person);
+//        return userAdminRedirect(auth);
+//    }
 
     private String userAdminRedirect(Authentication auth) {
         Collection<? extends GrantedAuthority> authorities = auth.getAuthorities();
@@ -65,6 +72,6 @@ public class PersonController {
                 .filter(a -> Objects.equals("ROLE_ADMIN", a.getAuthority()))
                 .findAny();
         if (roleAdmin.isPresent()) return "redirect:/admin";
-        else return "redirect:/user";
+        else return "redirect:/users";
     }
 }

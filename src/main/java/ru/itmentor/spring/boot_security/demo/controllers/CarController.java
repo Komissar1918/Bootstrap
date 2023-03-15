@@ -18,7 +18,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 @Controller
-@RequestMapping("/cars")
 public class CarController {
 
     private final CarService carServiceList;
@@ -32,16 +31,17 @@ public class CarController {
     @GetMapping("/{id}")
     public String show(@PathVariable("id") int id, Model model) {  // получим машину по id
         model.addAttribute("car", carServiceList.getById(id));
-        return "show";
+        return "admin/adminPage";
     }
 
-    @GetMapping("/new")
-    public String newCar(Model model) {
+    @GetMapping("/add")
+    public String newCar(Model model, Authentication authentication) {
         model.addAttribute("car", new Car());
-        return "new";
+        model.addAttribute("authentication",authentication);
+        return "admin/newCar";
     }
 
-    @PostMapping()
+    @PostMapping("/new")
     public String create(@ModelAttribute("car") @Valid Car car, //добавляем новую машину
                          BindingResult bindingResult,
                          Authentication auth) {
@@ -57,18 +57,18 @@ public class CarController {
         return "edit";
     }
 
-    @PatchMapping("/{id}")
+    @PatchMapping("/{id}/update")
     public String update(@ModelAttribute("car") @Valid Car car, //изменяем данные по машине
                          BindingResult bindingResult,
                          @PathVariable("id") int id,
                          Authentication auth) {
         if (bindingResult.hasErrors())     //проверяем на валидацию
-            return "edit";
+            return "update";
         carServiceList.update(id, car);
         return userAdminRedirect(auth);
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/{id}/delete")
     public String delete(@PathVariable("id") int id, Authentication auth) { //удаляем машину
         carServiceList.delete(id);
         return userAdminRedirect(auth);
@@ -79,7 +79,7 @@ public class CarController {
         Optional<? extends GrantedAuthority> roleAdmin = authorities.stream()
                 .filter(a -> Objects.equals("ROLE_ADMIN", a.getAuthority()))
                 .findAny();
-        if (roleAdmin.isPresent()) return "redirect:/admin";
-        else return "redirect:/user";
+        if (roleAdmin.isPresent()) return "redirect:/adminPage";
+        else return "redirect:/login";
     }
 }
