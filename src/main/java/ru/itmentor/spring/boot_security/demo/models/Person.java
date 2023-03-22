@@ -33,12 +33,23 @@ public class Person implements UserDetails {
     @Size(min=2, message = "Не меньше 5 знаков")
     private String password;
 
+    @NotEmpty(message = "The role cannot be omitted")
     @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(name = "person_roles",
+            joinColumns = @JoinColumn(name = "person_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"))
     private Set<Role> roles;
 
     public Person() {
     }
 
+    public Person(String email, String name, String lastName, String password, Set<Role> roles) {
+        this.email = email;
+        this.name = name;
+        this.lastName = lastName;
+        this.password = password;
+        this.roles = roles;
+    }
 
     public int getId() {
         return id;

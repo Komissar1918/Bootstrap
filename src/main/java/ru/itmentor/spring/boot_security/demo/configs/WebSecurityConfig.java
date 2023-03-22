@@ -31,27 +31,26 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception { //конфигурация Spring Security и авторизации
-        http.formLogin()
-                .loginPage("/login")
-                .successHandler(successUserHandler)
-                .loginProcessingUrl("/login")
-                .usernameParameter("j_login")
-                .passwordParameter("j_password")
-                .permitAll();
-
-        http.logout()
-                .permitAll()
-                .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-                .logoutSuccessUrl("/login?logout")
-                .and().csrf().disable();
-
         http
+                .csrf()
+                .disable()
                 .authorizeRequests()
-                .antMatchers("/login").anonymous()
-                .antMatchers("/admin/**").access("hasAnyAuthority('ADMIN')")
-                .antMatchers("/user/**").access("hasAnyAuthority('ADMIN', 'USER')")
-//                .antMatchers("/user/**").anonymous()
-                .anyRequest().authenticated();
+                //Доступ только для не зарегистрированных пользователей
+                .antMatchers("/registration").not().fullyAuthenticated()
+                //Доступ только для пользователей с ролью Администратор
+                .antMatchers("/admin/**").hasRole("ADMIN")
+                .antMatchers("/user").hasRole("USER")
+                //Доступ разрешен всем пользователей
+                .antMatchers("/login").permitAll()
+                //Все остальные страницы требуют аутентификации
+                .anyRequest().authenticated()
+                .and()
+                //Настройка для входа в систему
+                .formLogin().successHandler(successUserHandler)
+                .permitAll()
+                .and()
+                .logout()
+                .permitAll();
     }
 
     @Override
@@ -61,20 +60,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
         provider.setUserDetailsService(personService);
         auth.authenticationProvider(provider);
     }
-
-    // аутентификация inMemory
-//    @Bean
-//    @Override
-//    public UserDetailsService userDetailsService() {
-//        UserDetails user =
-//                User.withDefaultPasswordEncoder()
-//                        .username("user")
-//                        .password("user")
-//                        .roles("USER")
-//                        .build();
-//
-//        return new InMemoryUserDetailsManager(user);
-//    }
 
     @Bean
     public PasswordEncoder getPasswordEncoder() {

@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.itmentor.spring.boot_security.demo.models.Car;
 import ru.itmentor.spring.boot_security.demo.repositories.CarRepositories;
 
+import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Optional;
 
@@ -44,5 +45,13 @@ public class CarService {
     @Transactional
     public void delete(int id) {
         carRepositories.deleteById(id);
+    }
+    @PostConstruct
+    public void addDefaultCar(){
+        carRepositories.save(new Car("BMW X6",2020));
+        carRepositories.save(new Car("Mitsubishi GTO",1994));
+        carRepositories.save(new Car("LADA Kalina",2014));
+
+
     }
 }

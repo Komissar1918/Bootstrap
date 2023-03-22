@@ -2,84 +2,92 @@ package ru.itmentor.spring.boot_security.demo.controllers;
 
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
+import ru.itmentor.spring.boot_security.demo.exception.CarIncorectedData;
+import ru.itmentor.spring.boot_security.demo.exception.NoSuchException;
 import ru.itmentor.spring.boot_security.demo.models.Car;
+import ru.itmentor.spring.boot_security.demo.models.Person;
+import ru.itmentor.spring.boot_security.demo.redirect.UserAdminRedirect;
 import ru.itmentor.spring.boot_security.demo.service.CarService;
 
 import javax.validation.Valid;
-import java.security.Principal;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-@Controller
+@RestController
 public class CarController {
 
     private final CarService carServiceList;
 
+
     @Autowired
     public CarController(CarService carServiceList) {
         this.carServiceList = carServiceList;
+
     }
 
-
-    @GetMapping("/{id}")
-    public String show(@PathVariable("id") int id, Model model) {  // получим машину по id
-        model.addAttribute("car", carServiceList.getById(id));
-        return "admin/adminPage";
+    @GetMapping("/admin/all")
+    public List<Car> getAllCarsAdmin(){
+        return carServiceList.getAll();
+    }
+    @GetMapping("/user/all")
+    public List<Car> getAllCarsUser(){
+        return carServiceList.getAll();
     }
 
-    @GetMapping("/add")
-    public String newCar(Model model, Authentication authentication) {
-        model.addAttribute("car", new Car());
-        model.addAttribute("authentication",authentication);
-        return "admin/newCar";
+    @GetMapping("/admin/{id}")
+    public Car show(@PathVariable("id") int id) {
+        Car car = carServiceList.getById(id);
+        if(car==null){
+            throw new NoSuchException("There is no car with id = " + id + " int database");
+        }
+        return car;
     }
 
-    @PostMapping("/new")
-    public String create(@ModelAttribute("car") @Valid Car car, //добавляем новую машину
-                         BindingResult bindingResult,
-                         Authentication auth) {
-        if (bindingResult.hasErrors())               //проверяем на валидацию
-            return "new";
+    @PostMapping("admin/save")
+    public Car create(@RequestBody @Valid Car car, BindingResult bindingResult) {
+        if(bindingResult.hasErrors()) {
+            StringBuilder errorMsg = new StringBuilder();
+            List<FieldError> errors = bindingResult.getFieldErrors();
+            for(FieldError error : errors) {
+                errorMsg.append(error.getField())
+                        .append(" - ")
+                        .append(error.getDefaultMessage())
+                        .append(";");
+            }
+            throw new NoSuchException(errorMsg.toString());
+        }
         carServiceList.save(car);
-        return userAdminRedirect(auth); //при добавлении возвращает нас на главную страницу с списком
+        return car;
     }
 
-    @GetMapping("/{id}/edit")
-    public String edit(Model model, @PathVariable("id") int id) {
-        model.addAttribute("car", carServiceList.getById(id));
-        return "edit";
-    }
-
-    @PatchMapping("/{id}/update")
-    public String update(@ModelAttribute("car") @Valid Car car, //изменяем данные по машине
-                         BindingResult bindingResult,
-                         @PathVariable("id") int id,
-                         Authentication auth) {
-        if (bindingResult.hasErrors())     //проверяем на валидацию
-            return "update";
+    @PatchMapping("admin/edit/{id}")
+    public Car update(@RequestBody @Valid Car car,
+                         @PathVariable("id") int id,BindingResult bindingResult) {
+        if(bindingResult.hasErrors()) {
+            StringBuilder errorMsg = new StringBuilder();
+            throw new NoSuchException(errorMsg.toString());
+        }
+        if(carServiceList.getById(id).getClass().equals(Car.class)) {
+            carServiceList.update(id, car);
+        } else {
+            StringBuilder errorMsg = new StringBuilder();
+            throw new NoSuchException(errorMsg.toString());
+        }
         carServiceList.update(id, car);
-        return userAdminRedirect(auth);
+        return car;
     }
 
-    @DeleteMapping("/{id}/delete")
-    public String delete(@PathVariable("id") int id, Authentication auth) { //удаляем машину
+    @DeleteMapping("admin/delete/{id}")
+    public void delete(@PathVariable("id") int id) {
         carServiceList.delete(id);
-        return userAdminRedirect(auth);
-    }
-
-    private String userAdminRedirect(Authentication auth) {
-        Collection<? extends GrantedAuthority> authorities = auth.getAuthorities();
-        Optional<? extends GrantedAuthority> roleAdmin = authorities.stream()
-                .filter(a -> Objects.equals("ROLE_ADMIN", a.getAuthority()))
-                .findAny();
-        if (roleAdmin.isPresent()) return "redirect:/adminPage";
-        else return "redirect:/login";
     }
 }

@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import ru.itmentor.spring.boot_security.demo.models.Role;
 import ru.itmentor.spring.boot_security.demo.repositories.RoleRepositories;
 
+import javax.annotation.PostConstruct;
 import java.util.Optional;
 
 @Service
@@ -15,8 +16,13 @@ public class RoleService {
     public RoleService(RoleRepositories roleRepositories) {
         this.roleRepositories = roleRepositories;
     }
-    public Role getByName(String name){
-        Optional<Role> roleOptional = roleRepositories.findByName(name);
+    public Role getByName(String role){
+        Optional<Role> roleOptional = roleRepositories.findByRole(role);
         return roleOptional.orElseThrow();
+    }
+    @PostConstruct
+    public void addDefaultRole() {
+        roleRepositories.save(new Role("ROLE_ADMIN"));
+        roleRepositories.save(new Role("ROLE_USER"));
     }
 }
